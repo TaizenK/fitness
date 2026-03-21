@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>GYM LOG</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --accent: #c8f020;
+    --accent2: #7b61ff;
+    --text: #f0f0f0;
+    --text2: #888896;
+    --danger: #ff4d4d;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 10px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+  .date-badge {
+    font-size: 0.75rem;
+    color: var(--text2);
+    background: var(--surface2);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 55px;
+    z-index: 99;
+  }
+  .tab {
+    padding: 12px 0;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .page { display: none; padding: 18px 16px; }
+  .page.active { display: block; }
+
+  .label {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    margin-top: 18px;
+  }
+  .label:first-child { margin-top: 0; }
+
+  .exercise-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ex-pill {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 8px;
+    text-align: center;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.4;
+  }
+  .ex-pill:active { transform: scale(0.96); }
+  .ex-pill.selected {
+    background: rgba(200,240,32,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .weight-row {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .weight-row .wlabel { font-size: 0.65rem; color: var(--text2); letter-spacing: 1px; text-transform: uppercase; }
+  .weight-right { display: flex; align-items: baseline; gap: 4px; }
+  .weight-row input {
+    background: none; border: none; color: var(--text);
+    font-size: 1.6rem; font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px; width: 72px; text-align: right; outline: none;
+    -moz-appearance: textfield;
+  }
+  .weight-row input::-webkit-outer-spin-button,
+  .weight-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .weight-unit { font-size: 0.82rem; color: var(--text2); }
+
+  .set-list { display: flex; flex-direction: column; gap: 8px; }
+  .set-row {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeIn 0.18s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+  .set-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+    min-width: 46px;
+  }
+  .set-reps-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 1.6rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+    outline: none;
+    -moz-appearance: textfield;
+    min-width: 0;
+  }
+  .set-reps-input::-webkit-outer-spin-button,
+  .set-reps-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .set-reps-input::placeholder { color: var(--border); }
+  .set-unit { font-size: 0.82rem; color: var(--text2); }
+  .set-del {
+    background: none; border: none;
+    color: var(--text2); font-size: 1rem;
+    cursor: pointer; padding: 2px 6px;
+    border-radius: 6px; line-height: 1;
+  }
+  .set-del:active { color: var(--danger); }
+
+  .btn-add-set {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--text2);
+    font-size: 0.85rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .btn-add-set:active { border-color: var(--accent); color: var(--accent); }
+
+  .note-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    resize: none;
+    outline: none;
+  }
+  .note-input::placeholder { color: var(--text2); }
+  .note-input:focus { border-color: var(--accent2); }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #0d0d0f; }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1.5px solid var(--border);
+    margin-top: 8px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent);
+    color: #0d0d0f;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .log-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .log-card .ex-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    padding-right: 32px;
+  }
+  .set-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .set-badge {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .set-badge .snum {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.8rem;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+  }
+  .set-badge .srep {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.05rem;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .set-badge .sunit { font-size: 0.68rem; color: var(--text2); }
+  .log-weight {
+    margin-top: 7px;
+    font-size: 0.78rem;
+    color: var(--text2);
+  }
+  .log-weight strong {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .log-note {
+    font-size: 0.75rem;
+    color: var(--text2);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+  }
+  .log-delete {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: none; border: none;
+    color: var(--text2); font-size: 1rem;
+    cursor: pointer; padding: 4px 6px;
+    border-radius: 6px;
+  }
+  .log-delete:active { color: var(--danger); }
+
+  .date-group-header {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-transform: uppercase;
+    padding: 6px 0 8px;
+    margin-top: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .date-group-header:first-child { margin-top: 0; }
+
+  .empty {
+    text-align: center;
+    padding: 52px 20px;
+    color: var(--text2);
+    font-size: 0.85rem;
+    line-height: 2;
+  }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.4; }
+  .today-log-wrap { margin-top: 20px; }
+  .btn-discord {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius);
+    background: #5865f2;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-discord:active { opacity: 0.85; transform: scale(0.97); }
+
+  /* CALENDAR */
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .cal-nav-btn {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-size: 1.1rem;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-nav-btn:active { background: var(--border); }
+  .cal-month-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+  .cal-dow-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: calc((min(100vw, 480px) - 32px - 6 * 4px) / 7);
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--text2);
+    padding: 2px 0 6px;
+    letter-spacing: 1px;
+  }
+  .cal-dow.sun { color: #ff6b6b; }
+  .cal-dow.sat { color: #6ba3ff; }
+  .cal-day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text2);
+    transition: background 0.12s;
+    user-select: none;
+  }
+  .cal-day.empty { cursor: default; }
+  .cal-day.has-record { color: var(--text); font-weight: 700; }
+  .cal-day.has-record::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .cal-day.today-cell {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+  }
+  .cal-day.selected {
+    background: var(--accent) !important;
+    color: #0d0d0f !important;
+    font-weight: 700;
+  }
+  .cal-day.selected::after { background: #0d0d0f; }
+  .cal-day.sun-col { color: #ff6b6b; }
+  .cal-day.sat-col { color: #6ba3ff; }
+  .cal-day:not(.empty):not(.selected):active { background: var(--surface2); }
+  .cal-detail {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .cal-detail-label {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .cal-no-record {
+    text-align: center;
+    padding: 24px 0;
+    color: var(--text2);
+    font-size: 0.82rem;
+  }
+  .export-bar {
+    padding: 14px 0 4px;
+    display: flex;
+    gap: 8px;
+  }
+  .btn-export {
+    flex: 1;
+    padding: 11px 8px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 0.8rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn-export:active { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GYM LOG</h1>
+  <span class="date-badge" id="headerDate"></span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('record', this)">📝 記録</div>
+  <div class="tab" onclick="switchTab('history', this)">📋 履歴</div>
+</div>
+
+<!-- RECORD PAGE -->
+<div class="page active" id="page-record">
+
+  <p class="label">種目を選ぶ</p>
+  <div class="exercise-grid">
+    <div class="ex-pill" onclick="selectExercise(this,'レッグエクステンション')">🦵 レッグ<br>エクステンション</div>
+    <div class="ex-pill" onclick="selectExercise(this,'レッグプレス')">🏋️ レッグ<br>プレス</div>
+    <div class="ex-pill" onclick="selectExercise(this,'グルートエクステンション')">🍑 グルート<br>エクステンション</div>
+    <div class="ex-pill" onclick="selectExercise(this,'ベンチプレス')">💪 ベンチ<br>プレス</div>
+    <div class="ex-pill" onclick="selectExercise(this,'ショルダープレス')">🔝 ショルダー<br>プレス</div>
+    <div class="ex-pill" onclick="selectExercise(this,'その他')">➕ その他</div>
+  </div>
+
+  <p class="label">重量（任意）</p>
+  <div class="weight-row">
+    <span class="wlabel">重量</span>
+    <div class="weight-right">
+      <input type="number" id="weight" placeholder="60" min="0" step="0.5">
+      <span class="weight-unit">kg</span>
+    </div>
+  </div>
+
+  <p class="label">セットごとの回数</p>
+  <div class="set-list" id="setList"></div>
+  <button class="btn-add-set" onclick="addSet()">＋ セットを追加</button>
+
+  <p class="label" style="margin-top:16px;">メモ（任意）</p>
+  <textarea class="note-input" id="note" rows="2" placeholder="調子良かった、など…"></textarea>
+
+  <div style="margin-top:14px;">
+    <button class="btn btn-primary" onclick="saveRecord()">✔ 記録する</button>
+    <button class="btn btn-secondary" onclick="clearForm()">クリア</button>
+    <button class="btn-discord" onclick="copyDiscord()">💬 今日の記録をDiscord用にコピー</button>
+  </div>
+
+  <div class="today-log-wrap" id="todayLogList"></div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history">
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calPrevMonth()">&#8249;</button>
+    <span class="cal-month-label" id="calMonthLabel"></span>
+    <button class="cal-nav-btn" onclick="calNextMonth()">&#8250;</button>
+  </div>
+  <div class="cal-dow-row" id="calDowRow"></div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-detail" id="calDetail"></div>
+  <div class="export-bar">
+    <button class="btn-export" onclick="exportJSON()">⬇ JSONで保存</button>
+    <button class="btn-export" onclick="exportCSV()">⬇ CSVで保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'gymlog_v2';
+let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let selectedExercise = '';
+let currentTab = 'record';
+let setIdCounter = 0;
+
+function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+
+function today() {
+  return new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+}
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'short'});
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+document.getElementById('headerDate').textContent =
+  new Date().toLocaleDateString('ja-JP', {month:'short', day:'numeric', weekday:'short'});
+
+// ---- TABS ----
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'history') renderHistory();
+}
+
+// ---- EXERCISE ----
+function selectExercise(el, name) {
+  document.querySelectorAll('.ex-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedExercise = name;
+}
+
+// ---- SET MANAGEMENT ----
+function addSet() {
+  setIdCounter++;
+  const id = setIdCounter;
+  const list = document.getElementById('setList');
+  const setNum = list.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'set-row';
+  row.dataset.id = id;
+  row.innerHTML = `
+    <span class="set-num">SET ${setNum}</span>
+    <input class="set-reps-input" type="number" min="1" max="999" placeholder="10" inputmode="numeric">
+    <span class="set-unit">回</span>
+    <button class="set-del" onclick="removeSet(this)">✕</button>
+  `;
+  list.appendChild(row);
+  setTimeout(() => row.querySelector('input').focus(), 50);
+}
+
+function removeSet(btn) {
+  btn.closest('.set-row').remove();
+  renumberSets();
+}
+
+function renumberSets() {
+  document.querySelectorAll('#setList .set-row').forEach((row, i) => {
+    row.querySelector('.set-num').textContent = 'SET ' + (i + 1);
+  });
+}
+
+function getSetReps() {
+  const rows = document.querySelectorAll('#setList .set-row');
+  return Array.from(rows).map(row => {
+    const v = parseInt(row.querySelector('input').value);
+    return isNaN(v) ? null : v;
+  });
+}
+
+// ---- SAVE ----
+function saveRecord() {
+  if (!selectedExercise) { showToast('⚠ 種目を選んでください'); return; }
+  const repsArr = getSetReps();
+  if (repsArr.length === 0) { showToast('⚠ セットを追加してください'); return; }
+  if (repsArr.some(r => r === null)) { showToast('⚠ すべてのセットに回数を入力してください'); return; }
+  const weight = parseFloat(document.getElementById('weight').value) || null;
+  const note = document.getElementById('note').value.trim();
+  records.unshift({
+    id: Date.now(),
+    date: today(),
+    exercise: selectedExercise,
+    reps: repsArr,
+    weight,
+    note,
+    ts: new Date().toISOString()
+  });
+  saveData();
+  showToast('✔ 記録しました！');
+  clearForm();
+  renderTodayLog();
+}
+
+function clearForm() {
+  selectedExercise = '';
+  document.querySelectorAll('.ex-pill').forEach(p => p.classList.remove('selected'));
+  document.getElementById('weight').value = '';
+  document.getElementById('setList').innerHTML = '';
+  document.getElementById('note').value = '';
+}
+
+function deleteRecord(id) {
+  records = records.filter(r => r.id !== id);
+  saveData();
+  renderTodayLog();
+  if (currentTab === 'history') renderHistory();
+}
+
+// ---- LOG CARD ----
+function renderLogCard(r) {
+  // Support legacy format (single number) and new (array)
+  let repsArr;
+  if (Array.isArray(r.reps)) {
+    repsArr = r.reps;
+  } else {
+    repsArr = Array.from({length: r.sets || 1}, () => r.reps);
+  }
+
+  const badges = repsArr.map((rep, i) =>
+    `<div class="set-badge">
+      <span class="snum">S${i+1}</span>
+      <span class="srep">${rep}</span>
+      <span class="sunit">回</span>
+    </div>`
+  ).join('');
+
+  const wHtml = r.weight ? `<div class="log-weight"><strong>${r.weight}</strong> kg</div>` : '';
+  const nHtml = r.note ? `<div class="log-note">📝 ${r.note}</div>` : '';
+
+  return `<div class="log-card">
+    <div class="ex-name">${r.exercise} <span style="font-size:0.7rem;color:var(--text2);font-weight:400;">${repsArr.length}セット</span></div>
+    <div class="set-badges">${badges}</div>
+    ${wHtml}${nHtml}
+    <button class="log-delete" onclick="deleteRecord(${r.id})">🗑</button>
+  </div>`;
+}
+
+// ---- TODAY ----
+function renderTodayLog() {
+  const t = today();
+  const todayRecs = records.filter(r => r.date === t);
+  const el = document.getElementById('todayLogList');
+  if (!todayRecs.length) { el.innerHTML = ''; return; }
+  const totalSets = todayRecs.reduce((a, r) => a + (Array.isArray(r.reps) ? r.reps.length : (r.sets||1)), 0);
+  let html = `<p class="label">今日の記録 — ${todayRecs.length}種目 / ${totalSets}セット</p>`;
+  todayRecs.forEach(r => { html += renderLogCard(r); });
+  el.innerHTML = html;
+}
+
+// ---- CALENDAR ----
+let calYear, calMonth, calSelected;
+
+function calInit() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth(); // 0-based
+  calSelected = null;
+}
+
+function calPrevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function calNextMonth() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+function renderHistory() {
+  if (calYear === undefined) calInit();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  // Month label
+  const label = calYear + '年' + (calMonth + 1) + '月';
+  document.getElementById('calMonthLabel').textContent = label;
+
+  // Build set of dates that have records  e.g. "2026-03-21"
+  const recordDates = new Set(records.map(r => r.date));
+
+  const todayStr = today();
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const DOW = ['日','月','火','水','木','金','土'];
+  // Render DOW headers into separate div
+  document.getElementById('calDowRow').innerHTML = DOW.map((d, i) =>
+    `<div class="cal-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`
+  ).join('');
+
+  // Day cells only in calGrid
+  let html = '';
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="cal-day empty"></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const mm = String(calMonth + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    const dateStr = calYear + '-' + mm + '-' + dd;
+    const dow = (firstDay + d - 1) % 7;
+    const isToday = dateStr === todayStr;
+    const hasRec = recordDates.has(dateStr);
+    const isSel = dateStr === calSelected;
+
+    let cls = 'cal-day';
+    if (hasRec) cls += ' has-record';
+    if (isToday) cls += ' today-cell';
+    if (isSel) cls += ' selected';
+    if (dow === 0) cls += ' sun-col';
+    if (dow === 6) cls += ' sat-col';
+
+    html += `<div class="${cls}" onclick="calSelectDate('${dateStr}')">${d}</div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+
+  // Detail panel
+  if (calSelected) {
+    renderCalDetail(calSelected);
+  } else {
+    document.getElementById('calDetail').innerHTML = '';
+  }
+}
+
+function calSelectDate(dateStr) {
+  if (calSelected === dateStr) {
+    calSelected = null;
+    renderCalendar();
+    return;
+  }
+  calSelected = dateStr;
+  renderCalendar();
+}
+
+function renderCalDetail(dateStr) {
+  const recs = records.filter(r => r.date === dateStr);
+  const el = document.getElementById('calDetail');
+  if (!recs.length) {
+    el.innerHTML = `<div class="cal-detail-label">${formatDate(dateStr)}</div><div class="cal-no-record">この日の記録はありません</div>`;
+    return;
+  }
+  const totalSets = recs.reduce((a,r) => a + (Array.isArray(r.reps) ? r.reps.length : (r.sets||1)), 0);
+  let html = `<div class="cal-detail-label">${formatDate(dateStr)} — ${recs.length}種目 / ${totalSets}セット</div>`;
+  recs.forEach(r => { html += renderLogCard(r); });
+  el.innerHTML = html;
+}
+
+renderTodayLog();
+
+// ---- DISCORD COPY ----
+function copyDiscord() {
+  const t = today();
+  const todayRecs = records.filter(r => r.date === t);
+  if (!todayRecs.length) { showToast('⚠ 今日の記録がありません'); return; }
+
+  const dateLabel = new Date().toLocaleDateString('ja-JP', {month:'long', day:'numeric', weekday:'short'});
+  let lines = ['💪 ' + dateLabel + ' トレーニング'];
+
+  todayRecs.forEach(r => {
+    const repsArr = Array.isArray(r.reps) ? r.reps : Array.from({length: r.sets||1}, () => r.reps);
+    const repStr = repsArr.join('・');
+    const weightStr = r.weight ? r.weight + 'kg×' : '';
+    lines.push('「' + r.exercise + '」 ' + weightStr + repStr + '回');
+    if (r.note) lines.push('  ※' + r.note);
+  });
+
+  const text = lines.join('\n');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('✔ Discord用テキストをコピーしました'))
+      .catch(() => showDiscordModal(text));
+  } else {
+    showDiscordModal(text);
+  }
+}
+
+function showDiscordModal(text) {
+  const existing = document.getElementById('discordModal');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'discordModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;flex-direction:column;padding:20px;gap:12px;box-sizing:border-box;';
+  overlay.innerHTML =
+    '<div style="color:#5865f2;font-size:0.9rem;font-weight:700;">💬 Discord用テキスト</div>' +
+    '<textarea readonly id="discordText" style="flex:1;max-height:240px;background:#1e1e24;color:#f0f0f0;border:1px solid #2a2a35;border-radius:10px;padding:12px;font-size:0.9rem;resize:none;line-height:1.8;"></textarea>' +
+    '<button onclick="copyDiscordText()" style="padding:14px;background:#5865f2;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;">コピーする</button>' +
+    '<button onclick="document.getElementById(\'discordModal\').remove()" style="padding:12px;background:#1e1e24;color:#888896;border:1.5px solid #2a2a35;border-radius:10px;font-size:0.85rem;cursor:pointer;">閉じる</button>';
+  document.body.appendChild(overlay);
+  document.getElementById('discordText').value = text;
+  setTimeout(() => { document.getElementById('discordText').select(); }, 100);
+}
+
+function copyDiscordText() {
+  const ta = document.getElementById('discordText');
+  ta.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value)
+      .then(() => { showToast('✔ コピーしました'); document.getElementById('discordModal').remove(); })
+      .catch(() => { document.execCommand('copy'); showToast('✔ コピーしました'); });
+  } else {
+    document.execCommand('copy');
+    showToast('✔ コピーしました');
+  }
+}
+
+// ---- EXPORT ----
+
+function exportCSV() {
+  if (!records.length) { showToast("⚠ 記録がありません"); return; }
+  const rows = [["日付","種目","セット数","回数(各セット)","重量(kg)","メモ"]];
+  records.forEach(r => {
+    const repsArr = Array.isArray(r.reps) ? r.reps : Array.from({length: r.sets||1}, () => r.reps);
+    rows.push([r.date, r.exercise, repsArr.length, repsArr.join(" / "), r.weight != null ? r.weight : "", r.note || ""]);
+  });
+  const csv = rows.map(row => row.map(v => '"' + String(v).replace(/"/g, '\"\"')+'"').join(",")).join("\n");
+  showExportModal(csv, "CSV");
+}
+
+function exportJSON() {
+  if (!records.length) { showToast("⚠ 記録がありません"); return; }
+  showExportModal(JSON.stringify(records, null, 2), "JSON");
+}
+
+function showExportModal(text, type) {
+  const existing = document.getElementById("exportModal");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "exportModal";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;flex-direction:column;padding:20px;gap:12px;box-sizing:border-box;";
+  overlay.innerHTML =
+    '<div style="color:#c8f020;font-size:0.78rem;letter-spacing:1px;">' + type + 'データ — 下のテキストをコピーして保存してください</div>' +
+    '<textarea readonly id="exportText" style="flex:1;background:#1e1e24;color:#f0f0f0;border:1px solid #2a2a35;border-radius:10px;padding:12px;font-size:0.7rem;resize:none;font-family:monospace;line-height:1.5;"></textarea>' +
+    '<button onclick="copyExport()" style="padding:14px;background:#7b61ff;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;">コピーする</button>' +
+    '<button onclick="document.getElementById(\'exportModal\').remove()" style="padding:12px;background:#1e1e24;color:#888896;border:1.5px solid #2a2a35;border-radius:10px;font-size:0.85rem;cursor:pointer;">閉じる</button>';
+  document.body.appendChild(overlay);
+  document.getElementById("exportText").value = text;
+  setTimeout(() => { document.getElementById("exportText").select(); }, 100);
+}
+
+function copyExport() {
+  const ta = document.getElementById("exportText");
+  ta.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => showToast("✔ コピーしました")).catch(() => {
+      document.execCommand("copy"); showToast("✔ コピーしました");
+    });
+  } else {
+    document.execCommand("copy"); showToast("✔ コピーしました");
+  }
+}
+</script>
